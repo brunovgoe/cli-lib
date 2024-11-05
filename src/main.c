@@ -1,88 +1,49 @@
-/**
- * main.h
- * Created on Aug, 23th 2023
- * Author: Tiago Barros
- * Based on "From C to C++ course - 2002"
-*/
-
-#include <string.h>
-
-#include "screen.h"
 #include "keyboard.h"
+#include "screen.h"
 #include "timer.h"
 
-int x = 34, y = 12;
-int incX = 1, incY = 1;
+int main() {
+    int basketPosition = 0;   // Posição da cesta
+    int ballPosition = -1;    // Posição da bola (-1 significa que ainda não está caindo)
+    int basketDirection = 1;  // Direção da cesta (1 = direita, -1 = esquerda)
+    int score = 0;
 
-void printHello(int nextX, int nextY)
-{
-    screenSetColor(CYAN, DARKGRAY);
-    screenGotoxy(x, y);
-    printf("           ");
-    x = nextX;
-    y = nextY;
-    screenGotoxy(x, y);
-    printf("Hello World");
-}
+    while (1) {
+        clearScreen();
 
-void printKey(int ch)
-{
-    screenSetColor(YELLOW, DARKGRAY);
-    screenGotoxy(35, 22);
-    printf("Key code :");
-
-    screenGotoxy(34, 23);
-    printf("            ");
-    
-    if (ch == 27) screenGotoxy(36, 23);
-    else screenGotoxy(39, 23);
-
-    printf("%d ", ch);
-    while (keyhit())
-    {
-        printf("%d ", readch());
-    }
-}
-
-int main() 
-{
-    static int ch = 0;
-
-    screenInit(1);
-    keyboardInit();
-    timerInit(50);
-
-    printHello(x, y);
-    screenUpdate();
-
-    while (ch != 10) //enter
-    {
-        // Handle user input
-        if (keyhit()) 
-        {
-            ch = readch();
-            printKey(ch);
-            screenUpdate();
+        // Verifica entrada do jogador
+        if (isKeyDown(KEY_SPACE) && ballPosition == -1) {
+            // Inicia a queda da bola
+            ballPosition = 0;
         }
 
-        // Update game state (move elements, verify collision, etc)
-        if (timerTimeOver() == 1)
-        {
-            int newX = x + incX;
-            if (newX >= (MAXX -strlen("Hello World") -1) || newX <= MINX+1) incX = -incX;
-            int newY = y + incY;
-            if (newY >= MAXY-1 || newY <= MINY+1) incY = -incY;
-
-            printKey(ch);
-            printHello(newX, newY);
-
-            screenUpdate();
+        // Atualiza a posição da bola
+        if (ballPosition != -1) {
+            ballPosition++;
+            if (ballPosition >= SCREEN_HEIGHT - 1) {
+                // Verifica se a bola acerta a cesta
+                if (basketPosition <= SCREEN_WIDTH / 2 && basketPosition + 3 >= SCREEN_WIDTH / 2) {
+                    score++;  // Incrementa o placar
+                }
+                ballPosition = -1; // Reseta a posição da bola
+            }
         }
-    }
 
-    keyboardDestroy();
-    screenDestroy();
-    timerDestroy();
+        // Atualiza a posição da cesta
+        basketPosition += basketDirection;
+        if (basketPosition <= 0 || basketPosition >= SCREEN_WIDTH - 3) {
+            basketDirection = -basketDirection; // Inverte a direção
+        }
+
+        // Renderiza os objetos
+        if (ballPosition != -1) {
+            drawBall(ballPosition);
+        }
+        drawBasket(basketPosition);
+        displayScore(score);
+
+        delay(100); // Controla a velocidade do jogo
+    }
 
     return 0;
 }
